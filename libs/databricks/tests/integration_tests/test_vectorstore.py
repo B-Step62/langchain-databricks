@@ -23,11 +23,12 @@ def test_vectorstore():
     because the setup is too complex to run within a single python file.
     Thereby, this test simply triggers the workflow by calling the REST API.
     """
+    required_env_vars = ["DATABRICKS_HOST", "DATABRICKS_TOKEN", "VS_TEST_JOB_ID"]
+    for var in required_env_vars:
+        assert os.getenv(var), f"Please set the environment variable {var}."
+
     test_endpoint = os.getenv("DATABRICKS_HOST")
     test_job_id = os.getenv("VS_TEST_JOB_ID")
-    headers = {
-        "Authorization": f"Bearer {os.getenv('DATABRICKS_TOKEN')}",
-    }
 
     # Check if there is any ongoing job run
     response = requests.get(
@@ -36,7 +37,7 @@ def test_vectorstore():
             "job_id": test_job_id,
             "active_only": True,
         },
-        headers=headers,
+        headers={"Authorization": f"Bearer {os.getenv('DATABRICKS_TOKEN')}"},
     )
     no_active_run = len(response.json().get("runs", [])) == 0
     assert no_active_run, "There is an ongoing job run. Please wait for it to complete."
@@ -49,7 +50,7 @@ def test_vectorstore():
         json={
             "job_id": test_job_id,
         },
-        headers=headers,
+        headers={"Authorization": f"Bearer {os.getenv('DATABRICKS_TOKEN')}"},
     )
 
     assert response.status_code == 200, "Failed to trigger the workflow."
@@ -64,7 +65,7 @@ def test_vectorstore():
             json={
                 "run_id": response.json()["run_id"],
             },
-            headers=headers,
+            headers={"Authorization": f"Bearer {os.getenv('DATABRICKS_TOKEN')}"},
         )
 
         assert response.status_code == 200, "Failed to get the job status."
